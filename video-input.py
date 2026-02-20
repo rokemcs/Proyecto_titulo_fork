@@ -4,7 +4,7 @@ import threading
 
 #Python version 3.11.9
 
-feed = 'D:\Firefox Downloads\Programming\Python\HPE_Mediapipe/videos/50wtf.mp4'
+feed = 'C:/Users/ROKEM/Downloads/Programming/Python\Proyecto_titulo_fork/videos/50wtf.mp4'
 #feed = "rtsp://rokemusic:matrix2004@192.168.1.67:554/11"
 
 cap = cv2.VideoCapture(feed)
