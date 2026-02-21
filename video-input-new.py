@@ -9,7 +9,7 @@ from collections import deque
 import ai_edge_litert.interpreter as tflite
 
 # Configuración
-feed = 'C:/Users/ROKEM/Downloads/Programming/Python\Proyecto_titulo_fork/videos/50wtf.mp4'
+feed = 'D:/Firefox Downloads/Programming\ESP32/Arduino/Arduino IDE/Proyecto_titulo_fork/videos/50wtf.mp4'
 MODEL_PATH = 'modelo_caidas_nativo.tflite'
 API_ALERTA_URL = 'http://tu-servidor-central.com/api/alertas' # Cambia esto por tu servidor real
 
@@ -108,7 +108,7 @@ class CameraHandler:
                     
                     # 3. Lógica de activación basada en la confianza de la IA
                     if prediccion > 0.85: # 85% de seguridad de que es una caída
-                        cv2.putText(frame, f"ALERTA IA: CAIDA! ({prediccion*100:.1f}%)", (30, 50), 
+                        cv2.putText(frame, f"ALERTA: CAIDA! ({prediccion*100:.1f}%)", (30, 50), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                         
                         # Disparar evento al servidor
