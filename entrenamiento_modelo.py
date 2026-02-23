@@ -5,6 +5,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.model_selection import train_test_split
 
+#pip install tensorflow scikit-learn
+
 # 1. Configuración de parámetros
 CSV_PATH = './dataset_output/dataset_output.csv'
 TIME_STEPS = 30  # Cuántos frames consecutivos forman una secuencia (1 segundo a 30fps)
@@ -74,7 +76,7 @@ model.summary()
 print("\nIniciando entrenamiento...")
 history = model.fit(
     X_train, y_train,
-    epochs=50,             # Número de pasadas completas por los datos
+    epochs=6,             # Número de pasadas completas por los datos
     batch_size=32,         # Cuántas secuencias procesar a la vez
     validation_data=(X_test, y_test)
 )

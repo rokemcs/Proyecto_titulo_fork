@@ -8,7 +8,8 @@ from collections import deque
 #import tensorflow as tf # O 'import tflite_runtime.interpreter as tflite' en Raspberry Pi
 import ai_edge_litert.interpreter as tflite
 
-# Needs pip install protobuf==4.25.3
+#pip uninstall tensorflow protobuf -y
+#pip install protobuf==4.25.3
 
 # Configuración
 feed = './videos/50wtf.mp4'
@@ -116,9 +117,9 @@ class CameraHandler:
                     estado_actual = self.diccionario_clases[indice_clase]
 
                     # 4. Lógica de visualización y alertas
-                    if confianza > 0.20: # Umbral de confianza
+                    if confianza > 0.80: # Umbral de confianza
                         if estado_actual == 'Caida':
-                            # Texto en rojo para alertas críticas
+                            # Texto en rojo para alertas críticasq
                             cv2.putText(frame, f"ALERTA: {estado_actual.upper()}! ({confianza*100:.1f}%)", (30, 50), 
                                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                             #self.enviar_alerta(confianza)
