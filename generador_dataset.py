@@ -5,14 +5,17 @@ import csv
 
 # Configuración de rutas
 BASE_DIR = 'dataset'
-CATEGORIES = {'normales': 0, 'caidas': 1}
-OUTPUT_CSV = 'dataset_caidas.csv'
+CATEGORIES = {'normales': 0, 'caidas': 1, 'sentado': 2, 'caminando': 3}
+OUTPUT_CSV = './dataset_output/dataset_output.csv'
 
 # Configuración de MediaPipe
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=False, model_complexity=1, min_detection_confidence=0.5)
 
 def procesar_videos():
+    # Asegurar que el directorio de salida exista antes de crear el archivo
+    os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
+    
     # Preparar el archivo CSV y escribir los encabezados
     with open(OUTPUT_CSV, mode='w', newline='') as file:
         writer = csv.writer(file)

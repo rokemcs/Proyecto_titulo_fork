@@ -3,18 +3,21 @@ import mediapipe as mp
 import threading
 import numpy as np
 import time
-import requests # Para enviar alertas web (HTTP)
+#import requests # Para enviar alertas web (HTTP)
 from collections import deque
 #import tensorflow as tf # O 'import tflite_runtime.interpreter as tflite' en Raspberry Pi
 import ai_edge_litert.interpreter as tflite
 
+# Needs pip install protobuf==4.25.3
+
 # Configuración
-feed = 'D:/Firefox Downloads/Programming\ESP32/Arduino/Arduino IDE/Proyecto_titulo_fork/videos/50wtf.mp4'
-MODEL_PATH = 'modelo_caidas_nativo.tflite'
+feed = './videos/50wtf.mp4'
+MODEL_PATH = 'modelo_nativo.tflite'
 API_ALERTA_URL = 'http://tu-servidor-central.com/api/alertas' # Cambia esto por tu servidor real
 
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
+
 
 class CameraHandler:
     def __init__(self, camera_index, window_name, camera_id):
@@ -38,6 +41,7 @@ class CameraHandler:
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
+        self.diccionario_clases = {0: 'Normal', 1: 'Caida', 2: 'Sentado', 3: 'Caminando'}
 
     def start(self):
         threading.Thread(target=self.update, args=(), daemon=True).start()
@@ -102,20 +106,26 @@ class CameraHandler:
                     # Ejecutar inferencia
                     self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
                     self.interpreter.invoke()
-                    
-                    # Obtener el resultado (probabilidad de 0 a 1)
-                    prediccion = self.interpreter.get_tensor(self.output_details[0]['index'])[0][0]
-                    
-                    # 3. Lógica de activación basada en la confianza de la IA
-                    if prediccion > 0.85: # 85% de seguridad de que es una caída
-                        cv2.putText(frame, f"ALERTA: CAIDA! ({prediccion*100:.1f}%)", (30, 50), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-                        
-                        # Disparar evento al servidor
-                        self.enviar_alerta(prediccion)
-                    else:
-                        cv2.putText(frame, f"Estado: Normal", (30, 50), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+                    # 2. Obtener el arreglo de 4 probabilidades
+                    predicciones = self.interpreter.get_tensor(self.output_details[0]['index'])[0]
+
+                    # 3. Encontrar el índice con la probabilidad más alta (0, 1, 2 o 3)
+                    indice_clase = np.argmax(predicciones)
+                    confianza = predicciones[indice_clase]
+                    estado_actual = self.diccionario_clases[indice_clase]
+
+                    # 4. Lógica de visualización y alertas
+                    if confianza > 0.20: # Umbral de confianza
+                        if estado_actual == 'Caida':
+                            # Texto en rojo para alertas críticas
+                            cv2.putText(frame, f"ALERTA: {estado_actual.upper()}! ({confianza*100:.1f}%)", (30, 50), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+                            #self.enviar_alerta(confianza)
+                        else:
+                            # Texto en verde para estados normales (sentado, caminando, etc.)
+                            cv2.putText(frame, f"Estado: {estado_actual} ({confianza*100:.1f}%)", (30, 50), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
             cv2.imshow(self.window_name, frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):

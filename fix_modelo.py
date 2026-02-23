@@ -4,7 +4,7 @@ TIME_STEPS = 30
 FEATURES = 132
 
 print("1. Cargando el modelo original...")
-modelo_original = tf.keras.models.load_model('modelo_caidas.keras')
+modelo_original = tf.keras.models.load_model('./dataset_output/modelo_output.keras')
 
 print("2. Creando un modelo clon con tamaño de lote (batch) estrictamente fijo en 1...")
 nuevo_modelo = tf.keras.Sequential([
@@ -19,7 +19,7 @@ nuevo_modelo = tf.keras.Sequential([
     tf.keras.layers.Dropout(0.2),
     
     tf.keras.layers.Dense(32, activation='relu'),
-    tf.keras.layers.Dense(1, activation='sigmoid')
+    tf.keras.layers.Dense(4, activation='softmax')
 ])
 
 print("3. Transfiriendo el conocimiento (pesos) al nuevo modelo...")
@@ -29,7 +29,7 @@ print("4. Convirtiendo a TFLite nativo...")
 converter = tf.lite.TFLiteConverter.from_keras_model(nuevo_modelo)
 tflite_model = converter.convert()
 
-nuevo_nombre = 'modelo_caidas_nativo.tflite'
+nuevo_nombre = 'modelo_nativo.tflite'
 with open(nuevo_nombre, 'wb') as f:
     f.write(tflite_model)
 

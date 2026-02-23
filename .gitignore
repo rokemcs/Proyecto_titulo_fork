@@ -1,4 +1,5 @@
-opencv-venv/
+venv/
 .vscode/
 videos/
 dataset/
+dataset_output/

@@ -6,7 +6,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.model_selection import train_test_split
 
 # 1. Configuración de parámetros
-CSV_PATH = 'dataset_caidas.csv'
+CSV_PATH = './dataset_output/dataset_output.csv'
 TIME_STEPS = 30  # Cuántos frames consecutivos forman una secuencia (1 segundo a 30fps)
 FEATURES = 132   # 33 landmarks * 4 valores (x, y, z, visibilidad)
 
@@ -59,12 +59,13 @@ model = Sequential([
     
     # Capas densas de clasificación
     Dense(32, activation='relu'),
-    Dense(1, activation='sigmoid') # Salida binaria: 0 (Normal) o 1 (Caída)
+    Dense(4, activation='softmax')
+    #Dense(1, activation='sigmoid') # Salida binaria: 0 (Normal) o 1 (Caída)
 ])
 
 # Compilar el modelo
 model.compile(optimizer='adam', 
-              loss='binary_crossentropy', 
+              loss='sparse_categorical_crossentropy', 
               metrics=['accuracy'])
 
 model.summary()
@@ -83,6 +84,6 @@ loss, accuracy = model.evaluate(X_test, y_test)
 print(f"\nPrecisión en datos de prueba: {accuracy * 100:.2f}%")
 
 # Guardar el modelo entrenado
-model_path = 'modelo_caidas.keras'
+model_path = './dataset_output/modelo_output.keras'
 model.save(model_path)
 print(f"Modelo guardado exitosamente como '{model_path}'")
