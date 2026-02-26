@@ -1,1 +1,5 @@
 venv/
+.vscode/
+videos/
+dataset/
+dataset_output/
