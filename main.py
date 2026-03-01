@@ -11,10 +11,10 @@ import ai_edge_litert.interpreter as tflite
 #pip uninstall tensorflow protobuf -y
 #pip install protobuf==4.25.3
 
-# Configuración
+#configuración
 feed = './videos/50wtf.mp4'
 MODEL_PATH = 'modelo_nativo.tflite'
-API_ALERTA_URL = 'http://tu-servidor-central.com/api/alertas' # Cambia esto por tu servidor real
+API_ALERTA_URL = 'http://tu-servidor-central.com/api/alertas'
 
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
@@ -26,39 +26,47 @@ class CameraHandler:
         self.window_name = window_name
         self.camera_id = camera_id
         
-        # Configurar MediaPipe
+        #configurar mediapipe
         self.pose = mp_pose.Pose(static_image_mode=False, model_complexity=1, min_detection_confidence=0.5)
         self.running = True
         
-        # Búfer de secuencia (30 frames)
+        #búfer de secuencia (30 frames)
         self.sequence_buffer = deque(maxlen=30)
         
-        # Control de alertas para no saturar el servidor enviando alertas cada frame
+        #control de alertas para no saturar el servidor enviando alertas cada frame
         self.ultima_alerta_tiempo = 0
         self.cooldown_alerta_segundos = 10 
         
-        # Cargar el intérprete de TFLite
+        #cargar el intérprete de TFLite
         self.interpreter = tflite.Interpreter(model_path=MODEL_PATH)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
         self.diccionario_clases = {0: 'Normal', 1: 'Caida', 2: 'Sentado', 3: 'Caminando'}
 
+        #filtro de estabilización
+        self.estado_confirmado = 'Normal'
+        self.frames_consecutivos = 0
+        self.clase_candidata = None
+        self.FRAMES_REQUERIDOS = 10  # requiere ~1/3 de segundo de predicción continua a 30fps
+
     def start(self):
         threading.Thread(target=self.update, args=(), daemon=True).start()
 
     def extract_keypoints(self, results):
-        # Aplanar los 33 puntos x 4 valores = 132 características (Igual que en el entrenamiento)
+
+        #aplanar los 33 puntos x 4 valores = 132 características (Igual que en el entrenamiento)
         if results.pose_landmarks:
             return np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten()
         else:
             return np.zeros(132)
 
     def enviar_alerta(self, confianza):
-        """Envía una alerta HTTP asíncrona al servidor central"""
+
+        #Envía una alerta HTTP asíncrona al servidor central
         tiempo_actual = time.time()
         
-        # Solo enviar alerta si ha pasado el tiempo de cooldown
+        #Solo enviar alerta si ha pasado el tiempo de cooldown
         if (tiempo_actual - self.ultima_alerta_tiempo) > self.cooldown_alerta_segundos:
             self.ultima_alerta_tiempo = tiempo_actual
             
@@ -114,19 +122,39 @@ class CameraHandler:
                     # 3. Encontrar el índice con la probabilidad más alta (0, 1, 2 o 3)
                     indice_clase = np.argmax(predicciones)
                     confianza = predicciones[indice_clase]
-                    estado_actual = self.diccionario_clases[indice_clase]
+                    #estado_actual = self.diccionario_clases[indice_clase]
+                    estado_predicho = self.diccionario_clases[indice_clase]
 
                     # 4. Lógica de visualización y alertas
-                    if confianza > 0.80: # Umbral de confianza
-                        if estado_actual == 'Caida':
-                            # Texto en rojo para alertas críticasq
-                            cv2.putText(frame, f"ALERTA: {estado_actual.upper()}! ({confianza*100:.1f}%)", (30, 50), 
-                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-                            #self.enviar_alerta(confianza)
+                    if confianza > 0.85:
+                        #Si el modelo predice lo mismo que en el frame anterior
+                        if estado_predicho == self.clase_candidata:
+                            self.frames_consecutivos += 1
                         else:
-                            # Texto en verde para estados normales (sentado, caminando, etc.)
-                            cv2.putText(frame, f"Estado: {estado_actual} ({confianza*100:.1f}%)", (30, 50), 
-                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                            # Si cambia la predicción, reiniciamos el contador
+                            self.clase_candidata = estado_predicho
+                            self.frames_consecutivos = 1
+                            
+                        #Si la predicción se mantiene estable por N frames, confirmamos el estado
+                        if self.frames_consecutivos >= self.FRAMES_REQUERIDOS:
+                            if self.estado_confirmado != estado_predicho:
+                                self.estado_confirmado = estado_predicho
+                                print(f"NUEVO ESTADO CONFIRMADO: {self.estado_confirmado}")
+                                
+                                # SOLO AQUI disparas la alerta MQTT si es una caída
+                                if self.estado_confirmado == 'Caida':
+                                    self.enviar_alerta(confianza)
+                    else:
+                        #Si la confianza es baja, reiniciamos el contador por seguridad
+                        self.frames_consecutivos = 0
+
+                    #ibujar en pantalla usando el estado CONFIRMADO, no el predicho instantáneamente
+                    if self.estado_confirmado == 'Caida':
+                        cv2.putText(frame, f"ALERTA: {self.estado_confirmado}!", (30, 50), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+                    else:
+                        cv2.putText(frame, f"Estado: {self.estado_confirmado}", (30, 50), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
             cv2.imshow(self.window_name, frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):

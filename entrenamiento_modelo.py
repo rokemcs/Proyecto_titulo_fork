@@ -7,10 +7,10 @@ from sklearn.model_selection import train_test_split
 
 #pip install tensorflow scikit-learn
 
-# 1. Configuración de parámetros
+#Configuración de parámetros
 CSV_PATH = './dataset_output/dataset_output.csv'
-TIME_STEPS = 30  # Cuántos frames consecutivos forman una secuencia (1 segundo a 30fps)
-FEATURES = 132   # 33 landmarks * 4 valores (x, y, z, visibilidad)
+TIME_STEPS = 30  #Cuántos frames consecutivos forman una secuencia (1 segundo a 30fps)
+FEATURES = 132   #33 landmarks * 4 valores (x, y, z, visibilidad)
 
 def cargar_y_crear_secuencias(csv_path, time_steps):
     print("Cargando datos del CSV...")
@@ -19,16 +19,16 @@ def cargar_y_crear_secuencias(csv_path, time_steps):
     secuencias = []
     etiquetas = []
     
-    # Agrupar por video_id para no mezclar frames de diferentes videos
+    #Agrupar por video_id para no mezclar frames de diferentes videos
     videos = df.groupby('video_id')
     
     print("Creando ventanas de tiempo...")
     for video_id, data in videos:
-        # Extraer solo las columnas de coordenadas (desde 'x0' hasta 'v32')
+        #Extraer solo las columnas de coordenadas (desde 'x0' hasta 'v32')
         valores_coordenadas = data.iloc[:, 3:].values
         etiqueta_video = data.iloc[0]['label'] # La etiqueta es la misma para todo el video
         
-        # Crear secuencias deslizantes (Sliding Window)
+        #Crear secuencias deslizantes (Sliding Window)
         num_frames = len(valores_coordenadas)
         if num_frames >= time_steps:
             for i in range(num_frames - time_steps + 1):
@@ -38,41 +38,41 @@ def cargar_y_crear_secuencias(csv_path, time_steps):
                 
     return np.array(secuencias), np.array(etiquetas)
 
-# 2. Preparar los datos
+#Preparar los datos
 X, y = cargar_y_crear_secuencias(CSV_PATH, TIME_STEPS)
 
 print(f"Total de secuencias generadas: {X.shape[0]}")
 print(f"Forma de X (Entrada): {X.shape} -> (muestras, time_steps, features)")
 print(f"Forma de y (Etiquetas): {y.shape}")
 
-# Dividir en datos de entrenamiento (80%) y prueba (20%)
+#Dividir en datos de entrenamiento (80%) y prueba (20%)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-# 3. Construir la arquitectura del modelo LSTM
+#Construir la arquitectura del modelo LSTM
 print("\nConstruyendo el modelo...")
 model = Sequential([
-    # Primera capa LSTM que lee la secuencia
+    #Primera capa LSTM que lee la secuencia
     LSTM(64, return_sequences=True, activation='relu', input_shape=(TIME_STEPS, FEATURES)),
     Dropout(0.2), # Previene el sobreajuste (overfitting)
     
-    # Segunda capa LSTM que consolida la información
+    #Segunda capa LSTM que consolida la información
     LSTM(32, return_sequences=False, activation='relu'),
     Dropout(0.2),
     
-    # Capas densas de clasificación
+    #Capas densas de clasificación
     Dense(32, activation='relu'),
     Dense(4, activation='softmax')
     #Dense(1, activation='sigmoid') # Salida binaria: 0 (Normal) o 1 (Caída)
 ])
 
-# Compilar el modelo
+#Compilar el modelo
 model.compile(optimizer='adam', 
               loss='sparse_categorical_crossentropy', 
               metrics=['accuracy'])
 
 model.summary()
 
-# 4. Entrenar el modelo
+#Entrenar el modelo
 print("\nIniciando entrenamiento...")
 history = model.fit(
     X_train, y_train,
@@ -81,11 +81,11 @@ history = model.fit(
     validation_data=(X_test, y_test)
 )
 
-# 5. Evaluar y guardar
+#Evaluar y guardar
 loss, accuracy = model.evaluate(X_test, y_test)
 print(f"\nPrecisión en datos de prueba: {accuracy * 100:.2f}%")
 
-# Guardar el modelo entrenado
+#Guardar el modelo entrenado
 model_path = './dataset_output/modelo_output.keras'
 model.save(model_path)
 print(f"Modelo guardado exitosamente como '{model_path}'")
