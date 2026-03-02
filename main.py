@@ -126,12 +126,12 @@ class CameraHandler:
                     estado_predicho = self.diccionario_clases[indice_clase]
 
                     # 4. Lógica de visualización y alertas
-                    if confianza > 0.85:
+                    if confianza > 0.90:
                         #Si el modelo predice lo mismo que en el frame anterior
                         if estado_predicho == self.clase_candidata:
                             self.frames_consecutivos += 1
                         else:
-                            # Si cambia la predicción, reiniciamos el contador
+                            #Si cambia la predicción, reiniciamos el contador
                             self.clase_candidata = estado_predicho
                             self.frames_consecutivos = 1
                             
@@ -141,14 +141,14 @@ class CameraHandler:
                                 self.estado_confirmado = estado_predicho
                                 print(f"NUEVO ESTADO CONFIRMADO: {self.estado_confirmado}")
                                 
-                                # SOLO AQUI disparas la alerta MQTT si es una caída
+                                #alerta MQTT si es una caída
                                 if self.estado_confirmado == 'Caida':
                                     self.enviar_alerta(confianza)
                     else:
                         #Si la confianza es baja, reiniciamos el contador por seguridad
                         self.frames_consecutivos = 0
 
-                    #ibujar en pantalla usando el estado CONFIRMADO, no el predicho instantáneamente
+                    #dibujar en pantalla usando el estado CONFIRMADO, no el predicho instantáneamente
                     if self.estado_confirmado == 'Caida':
                         cv2.putText(frame, f"ALERTA: {self.estado_confirmado}!", (30, 50), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
