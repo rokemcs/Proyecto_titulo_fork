@@ -5,8 +5,15 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.model_selection import train_test_split
 
+<<<<<<< HEAD
 # 1. Configuración de parámetros
 CSV_PATH = 'dataset_caidas.csv'
+=======
+#pip install tensorflow scikit-learn
+
+# 1. Configuración de parámetros
+CSV_PATH = './dataset_output/dataset_output.csv'
+>>>>>>> 40e007be9d8330bc14f5b1c9b00ed93470ab4fc5
 TIME_STEPS = 30  # Cuántos frames consecutivos forman una secuencia (1 segundo a 30fps)
 FEATURES = 132   # 33 landmarks * 4 valores (x, y, z, visibilidad)
 
@@ -59,12 +66,21 @@ model = Sequential([
     
     # Capas densas de clasificación
     Dense(32, activation='relu'),
+<<<<<<< HEAD
     Dense(1, activation='sigmoid') # Salida binaria: 0 (Normal) o 1 (Caída)
+=======
+    Dense(4, activation='softmax')
+    #Dense(1, activation='sigmoid') # Salida binaria: 0 (Normal) o 1 (Caída)
+>>>>>>> 40e007be9d8330bc14f5b1c9b00ed93470ab4fc5
 ])
 
 # Compilar el modelo
 model.compile(optimizer='adam', 
+<<<<<<< HEAD
               loss='binary_crossentropy', 
+=======
+              loss='sparse_categorical_crossentropy', 
+>>>>>>> 40e007be9d8330bc14f5b1c9b00ed93470ab4fc5
               metrics=['accuracy'])
 
 model.summary()
@@ -73,7 +89,11 @@ model.summary()
 print("\nIniciando entrenamiento...")
 history = model.fit(
     X_train, y_train,
+<<<<<<< HEAD
     epochs=50,             # Número de pasadas completas por los datos
+=======
+    epochs=6,             # Número de pasadas completas por los datos
+>>>>>>> 40e007be9d8330bc14f5b1c9b00ed93470ab4fc5
     batch_size=32,         # Cuántas secuencias procesar a la vez
     validation_data=(X_test, y_test)
 )
@@ -83,6 +103,10 @@ loss, accuracy = model.evaluate(X_test, y_test)
 print(f"\nPrecisión en datos de prueba: {accuracy * 100:.2f}%")
 
 # Guardar el modelo entrenado
+<<<<<<< HEAD
 model_path = 'modelo_caidas.keras'
+=======
+model_path = './dataset_output/modelo_output.keras'
+>>>>>>> 40e007be9d8330bc14f5b1c9b00ed93470ab4fc5
 model.save(model_path)
 print(f"Modelo guardado exitosamente como '{model_path}'")

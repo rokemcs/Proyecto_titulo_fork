@@ -1,3 +1,8 @@
 venv/
+<<<<<<< HEAD
 dataset_caidas.csv
 Proyecto_titulo_fork.rar
+.vscode/
+videos/
+dataset/
+dataset_output/
